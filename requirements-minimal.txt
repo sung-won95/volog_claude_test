@@ -1,0 +1,31 @@
+# AI 보컬 코치 웹 애플리케이션 - 최소 요구사항
+
+# 웹 프레임워크 (필수)
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# 데이터 검증 (필수)
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# 과학 계산 (필수)
+numpy==1.24.3
+scipy==1.11.4
+
+# 오디오 처리 (필수)
+librosa==0.10.1
+soundfile==0.12.1
+audioread==3.0.1
+
+# 시각화 (필수)
+matplotlib==3.7.2
+
+# 환경 설정 (필수)
+python-dotenv==1.0.0
+
+# 실시간 오디오 (콘솔 모드용)
+sounddevice==0.4.6
+
+# 기본 유틸리티
+click==8.1.7

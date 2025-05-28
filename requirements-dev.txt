@@ -1,0 +1,48 @@
+# AI 보컬 코치 - 개발자용 의존성
+
+# 기본 요구사항 포함
+-r requirements-minimal.txt
+
+# 개발 도구
+black==23.12.0
+flake8==6.1.0
+isort==5.13.2
+mypy==1.7.1
+
+# 테스팅
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+httpx==0.25.2
+
+# 코드 품질
+bandit==1.7.5
+radon==6.0.1
+pylint==3.0.3
+
+# 문서화
+mkdocs==1.5.3
+mkdocs-material==9.4.14
+
+# 타입 스텁
+types-requests==2.31.0.10
+types-pillow==10.1.0.2
+
+# 성능 프로파일링
+line-profiler==4.1.1
+memory-profiler==0.61.0
+
+# 디버깅
+ipdb==0.13.13
+pdbpp==0.10.3
+
+# 프로젝트 관리
+pre-commit==3.6.0
+commitizen==3.13.0
+
+# 의존성 관리
+pip-tools==7.3.0
+safety==2.3.5
+
+# 환경 관리
+python-decouple==3.8
