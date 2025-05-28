@@ -16,6 +16,9 @@ from .voice_recorder import VoiceRecorder
 from .voice_analyzer import VoiceAnalyzer
 from .feedback_engine import FeedbackEngine
 from .section_selector import SectionSelector
+from .realtime_recorder import RealtimeRecorder
+from .realtime_feedback import RealtimeFeedback
+from .realtime_visualizer import RealtimeVisualizer
 
 class AIVocalCoach:
     """AI 보컬 코치 메인 클래스"""
@@ -31,6 +34,11 @@ class AIVocalCoach:
         self.voice_analyzer = VoiceAnalyzer()
         self.feedback_engine = FeedbackEngine()
         self.section_selector = SectionSelector()
+        
+        # 실시간 모듈들
+        self.realtime_recorder = RealtimeRecorder()
+        self.realtime_feedback = RealtimeFeedback()
+        self.realtime_visualizer = RealtimeVisualizer()
         
         # 노래 데이터
         self.song_data = None
@@ -447,3 +455,203 @@ class AIVocalCoach:
             print(f"  평균 구간 길이: {avg_duration:.1f}초")
         
         print("\n💡 시스템 상태: 준비 완료 ✅")
+    
+    def realtime_practice_mode(self):
+        """실시간 연습 모드"""
+        print("\n" + "=" * 60)
+        print("🎤 실시간 연습 모드")
+        print("=" * 60)
+        
+        # 마이크 사용 가능성 확인
+        if not self.realtime_recorder._check_microphone():
+            print("❌ 마이크를 사용할 수 없습니다. 기존 연습 모드를 이용해주세요.")
+            return
+        
+        # 오디오 장치 목록 표시
+        print("\n🎤 사용 가능한 마이크:")
+        self.realtime_recorder.list_audio_devices()
+        
+        # 연습 구간 선택
+        if not self.practice_sections:
+            print("❌ 연습 구간이 없습니다.")
+            return
+        
+        print("\n📋 연습할 구간을 선택하세요:")
+        self.show_practice_sections()
+        
+        while True:
+            try:
+                choice = input(f"구간 선택 (1-{len(self.practice_sections)}): ").strip()
+                section_idx = int(choice) - 1
+                
+                if 0 <= section_idx < len(self.practice_sections):
+                    break
+                else:
+                    print(f"1부터 {len(self.practice_sections)} 사이의 숫자를 입력하세요.")
+            except ValueError:
+                print("숫자를 입력하세요.")
+        
+        selected_section = self.practice_sections[section_idx]
+        
+        print(f"\n🎯 선택된 구간: {selected_section['name']}")
+        print(f"⏱️  시간: {selected_section['duration']:.1f}초")
+        
+        # 목표 멜로디 시각화
+        self._visualize_target_melody(selected_section)
+        
+        # 실시간 연습 시작
+        self._start_realtime_practice(selected_section)
+    
+    def _start_realtime_practice(self, section: Dict):
+        """실시간 연습 시작"""
+        print("\n🎤 실시간 연습을 시작합니다!")
+        print("📢 언제든지 'q'를 입력하고 Enter를 누르면 종료됩니다.")
+        
+        # 피드백 콜백 함수들
+        def on_pitch_feedback(pitch_info):
+            freq = pitch_info.get('frequency', 0)
+            note = pitch_info.get('note', 'Unknown')
+            if freq > 0:
+                print(f"\r🎵 현재 음: {note} ({freq:.1f}Hz)", end='', flush=True)
+        
+        def on_volume_feedback(volume_info):
+            level = volume_info.get('normalized', 0)
+            status = volume_info.get('status', '알 수 없음')
+            # 별도 라인에 표시하지 않고 종합 피드백에서 처리
+        
+        def on_general_feedback(analysis_result):
+            # 시각화 데이터 업데이트
+            self.realtime_visualizer.update_data(analysis_result)
+            
+            feedback = self.realtime_feedback.process_realtime_analysis(analysis_result)
+            
+            if 'messages' in feedback and feedback['messages']:
+                # 이전 줄 지우고 새로운 피드백 표시
+                print(f"\r{' ' * 80}", end='')  # 이전 내용 지우기
+                print(f"\r💡 {feedback['messages'][0]}", end='', flush=True)
+        
+        # 실시간 녹음 시작
+        success = self.realtime_recorder.start_recording(
+            target_melody=section['melody'],
+            pitch_callback=on_pitch_feedback,
+            volume_callback=on_volume_feedback,
+            feedback_callback=on_general_feedback
+        )
+        
+        if not success:
+            print("❌ 실시간 녹음을 시작할 수 없습니다.")
+            return
+        
+        # 시각화 시작 (선택사항)
+        use_visualization = input("📊 실시간 그래프를 표시하시겠습니까? (y/n): ").strip().lower()
+        if use_visualization in ['y', 'yes', '네', 'ㅇ']:
+            self.realtime_visualizer.start_visualization(section['melody'])
+        
+        print("\n🔴 실시간 연습 진행 중... (종료하려면 'q' + Enter)")
+        print("📊 실시간 피드백:")
+        
+        # 사용자 입력 대기 (별도 스레드에서)
+        import threading
+        stop_event = threading.Event()
+        
+        def wait_for_quit():
+            while not stop_event.is_set():
+                try:
+                    user_input = input().strip().lower()
+                    if user_input == 'q':
+                        stop_event.set()
+                        break
+                except:
+                    break
+        
+        input_thread = threading.Thread(target=wait_for_quit)
+        input_thread.daemon = True
+        input_thread.start()
+        
+        # 실시간 피드백 표시
+        try:
+            while not stop_event.is_set():
+                time.sleep(0.1)  # 짧은 대기
+                
+        except KeyboardInterrupt:
+            print("\n⚠️ 중단됨")
+        
+        # 녹음 중지
+        print(f"\n🔴 실시간 연습 종료 중...")
+        final_audio = self.realtime_recorder.stop_recording()
+        
+        # 시각화 중지
+        self.realtime_visualizer.stop_visualization()
+        
+        # 시각화 통계
+        viz_stats = self.realtime_visualizer.get_session_stats()
+        if 'error' not in viz_stats:
+            print(f"📊 시각화 통계: {viz_stats['data_points']}개 데이터 포인트, "
+                  f"{viz_stats['duration']:.1f}초간 분석")
+        
+        # 세션 요약
+        if final_audio:
+            print("\n📈 실시간 연습 결과:")
+            summary = self.realtime_feedback.get_performance_summary()
+            
+            if 'error' not in summary:
+                duration = summary.get('session_duration', 0)
+                avg_accuracy = summary.get('avg_pitch_accuracy', 0)
+                
+                print(f"⏱️  연습 시간: {duration:.1f}초")
+                print(f"🎯 평균 음정 정확도: {avg_accuracy*100:.1f}%")
+                
+                strengths = summary.get('strengths', [])
+                if strengths:
+                    print("💪 잘한 점:")
+                    for strength in strengths:
+                        print(f"  • {strength}")
+                
+                improvements = summary.get('improvement_areas', [])
+                if improvements:
+                    print("📈 개선할 점:")
+                    for improvement in improvements:
+                        print(f"  • {improvement}")
+            
+            # 전체 녹음에 대한 상세 분석
+            print("\n🔍 전체 녹음 분석 중...")
+            analysis_result = self.voice_analyzer.analyze_voice(final_audio, section['melody'])
+            feedback = self.feedback_engine.generate_feedback(analysis_result, section)
+            
+            self._show_practice_result(analysis_result, feedback, section)
+        
+        # 피드백 세션 초기화
+        self.realtime_feedback.reset_session()
+        self.realtime_visualizer.reset_data()
+        
+        print("\n✅ 실시간 연습이 완료되었습니다!")
+    
+    def configure_realtime_settings(self):
+        """실시간 설정 구성"""
+        print("\n⚙️ 실시간 연습 설정")
+        print("=" * 40)
+        
+        print("1. 피드백 민감도 설정")
+        print("   - high: 0.2초마다 피드백 (매우 민감)")
+        print("   - medium: 0.5초마다 피드백 (기본)")
+        print("   - low: 1.0초마다 피드백 (느림)")
+        
+        sensitivity = input("민감도 선택 (high/medium/low): ").strip().lower()
+        if sensitivity in ['high', 'medium', 'low']:
+            self.realtime_feedback.set_feedback_sensitivity(sensitivity)
+        else:
+            print("기본값(medium)으로 설정됩니다.")
+            self.realtime_feedback.set_feedback_sensitivity('medium')
+        
+        print("\n2. 오디오 장치 설정")
+        devices = self.realtime_recorder.list_audio_devices()
+        
+        try:
+            device_choice = input("사용할 마이크 번호 (기본값 사용시 Enter): ").strip()
+            if device_choice.isdigit():
+                device_id = int(device_choice)
+                self.realtime_recorder.set_input_device(device_id)
+        except:
+            print("기본 마이크를 사용합니다.")
+        
+        print("✅ 설정이 완료되었습니다.")

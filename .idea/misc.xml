@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="Python 3.13 (vologTest)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.13 (vologTest)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.12 (volog_claude_test)" project-jdk-type="Python SDK" />
 </project>

@@ -84,26 +84,32 @@ def main():
             print("선택하세요:")
             print("1. 연습 구간 목록 보기")
             print("2. 특정 구간 연습하기")
-            print("3. 커스텀 구간 만들기 (NEW!)")
-            print("4. 전체 분석 결과 보기")
-            print("5. 종료")
+            print("3. 실시간 연습 모드 (NEW!)")
+            print("4. 실시간 설정")
+            print("5. 커스텀 구간 만들기")
+            print("6. 전체 분석 결과 보기")
+            print("7. 종료")
             print("=" * 40)
             
-            choice = input("입력 (1-5): ").strip()
+            choice = input("입력 (1-7): ").strip()
             
             if choice == "1":
                 coach.show_practice_sections()
             elif choice == "2":
                 coach.practice_section()
             elif choice == "3":
-                coach.create_custom_section()
+                coach.realtime_practice_mode()
             elif choice == "4":
-                coach.show_analysis_summary()
+                coach.configure_realtime_settings()
             elif choice == "5":
+                coach.create_custom_section()
+            elif choice == "6":
+                coach.show_analysis_summary()
+            elif choice == "7":
                 print("프로그램을 종료합니다.")
                 break
             else:
-                print("잘못된 입력입니다. (1-5 중 선택)")
+                print("잘못된 입력입니다. (1-7 중 선택)")
                 
     except Exception as e:
         print(f"오류 발생: {e}")
